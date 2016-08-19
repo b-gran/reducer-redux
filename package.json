@@ -1,0 +1,52 @@
+{
+  "name": "reducer-redux",
+  "version": "0.1.0",
+  "description": "Any easier way to create redux reducers",
+  "main": "reducer.js",
+  "scripts": {
+    "test": "mocha test --compilers js:babel-core/register"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/b-gran/reducer-redux.git"
+  },
+  "keywords": [
+    "redux",
+    "reducer",
+    "redux-reducer",
+    "reducer-redux",
+    "combineReducers",
+    "compose"
+  ],
+  "author": "Bill Granfield <bill@billgranfield.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/b-gran/reducer-redux/issues"
+  },
+  "homepage": "https://github.com/b-gran/reducer-redux#readme",
+  "devDependencies": {
+    "async": "^2.0.1",
+    "babel-core": "^6.13.2",
+    "babel-preset-es2015": "^6.13.2",
+    "babel-preset-stage-0": "^6.5.0",
+    "chai": "^3.5.0",
+    "chalk": "^1.1.3",
+    "del": "^2.2.2",
+    "gulp": "^3.9.1",
+    "gulp-babel": "^6.1.2",
+    "gulp-cached": "^1.1.0",
+    "gulp-plumber": "^1.1.0",
+    "gulp-rename": "^1.2.2",
+    "gulp-sourcemaps": "^1.6.0",
+    "gulp-uglify": "^2.0.0",
+    "gulp-util": "^3.0.7",
+    "mocha": "^3.0.2",
+    "redux": "^3.5.2",
+    "run-sequence": "^1.2.2",
+    "vinyl-buffer": "^1.0.0",
+    "vinyl-source-stream": "^1.1.0"
+  },
+  "dependencies": {
+    "lodash": "^4.15.0"
+  }
+}
