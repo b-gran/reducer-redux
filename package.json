@@ -1,6 +1,6 @@
 {
   "name": "reducer-redux",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Any easier way to create redux reducers",
   "main": "reducer.js",
   "scripts": {
