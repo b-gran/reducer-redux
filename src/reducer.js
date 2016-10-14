@@ -173,6 +173,23 @@ export default reducer;
  * @param reducers the reducers to compose
  */
 export function compose (...reducers) {
+    return function (state, action, globalState) {
+        const topLevelArguments = Array.prototype.slice.call(arguments);
+        return _.reduce(
+            reducers,
+            (currentState, currentReducer) => {
+                const reducerArguments = [
+                    currentState,
+                    ...topLevelArguments.slice(1)
+                ];
+
+                return currentReducer.apply(null, reducerArguments);
+            },
+            state
+        );
+    };
+
+    /*
     return (state, action) => _.reduce(
         reducers,
         (currentState, currentReducer) => {
@@ -180,6 +197,7 @@ export function compose (...reducers) {
         },
         state
     );
+    */
 }
 
 

@@ -37,6 +37,27 @@ describe('compose (...reducers)', () => {
             done();
         }
     );
+
+    it('should pass all arguments to the composed functions', done => {
+        const expect4Arguments = function (one) {
+            expect(arguments.length).to.equal(4);
+            return one;
+        };
+
+        const hasCorrectArguments = function (one, two, three, four) {
+            const sum = one + two + three + four;
+            expect(sum).to.equal(10);
+            return sum;
+        };
+
+        const composedReducer = compose(
+            expect4Arguments,
+            hasCorrectArguments
+        );
+
+        expect(composedReducer(1, 2, 3, 4)).to.equal(10);
+        done();
+    });
 });
 
 
