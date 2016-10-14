@@ -161,7 +161,7 @@ export default reducer;
 
 /**
  * function compose (...reducers: [ function (state: Object, action: Object) ])
- *      -> function (state: Object, action: Object)
+ *      -> function (state: Object, action: Object, globalState: Object, ...otherArguments)
  *
  * Takes a list of reducers, and returns another reducer that calls the
  * first reducer with the state and action, then calls the second
@@ -188,16 +188,6 @@ export function compose (...reducers) {
             state
         );
     };
-
-    /*
-    return (state, action) => _.reduce(
-        reducers,
-        (currentState, currentReducer) => {
-            return currentReducer(currentState, action);
-        },
-        state
-    );
-    */
 }
 
 
