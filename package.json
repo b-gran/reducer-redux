@@ -1,0 +1,35 @@
+{
+  "name": "reducer-redux",
+  "version": "1.0.0",
+  "description": "Composable, functional redux reducers",
+  "main": "index.js",
+  "scripts": {
+    "test": "jest",
+    "publish": "node publish.js"
+  },
+  "dependencies": {
+    "ramda": "^0.23.0"
+  },
+  "devDependencies": {
+    "chalk": "^1.1.3"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/b-gran/reducer-redux.git"
+  },
+  "keywords": [
+    "reducer",
+    "redux",
+    "functional-programming",
+    "functional",
+    "compose",
+    "composable",
+    "composition"
+  ],
+  "author": "Bill Granfield <bill@billgranfield.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/b-gran/reducer-redux/issues"
+  },
+  "homepage": "https://github.com/b-gran/reducer-redux#readme"
+}
