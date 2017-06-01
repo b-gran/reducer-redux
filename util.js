@@ -83,6 +83,17 @@ module.exports.bindMethod = bindMethod
 const getFrom = bindMethod('get')
 module.exports.getFrom = getFrom
 
+// Returns true if the argument is a "plain" object -- one with a null prototype
+const isPlainObject = R.allPass([
+  R.is(Object),
+  R.pipe(
+    Object.getPrototypeOf,
+    R.prop('constructor'),
+    R.either(R.equals(null), R.equals(Object))
+  )
+])
+module.exports.isPlainObject = isPlainObject
+
 // Log the arguments and return value of a function.
 const inspectFunction = f => util.setLength(f.length, (...args) => {
   console.log('arguments', args)

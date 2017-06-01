@@ -27,10 +27,15 @@ const Matcher = util.functionWithType(function (condition, reducer = R.identity)
   return reduce
 }, 'Matcher')
 
+const PRECONDITIONS = {
+  isMatcherCondition: must(
+    R.anyPass([ util.isFunction, R.is(Object) ]),
+    'condition must be an object or function'
+  )
+}
 
 // The library export: wraps Matcher to only accept a condition
-const match = preconditions(
-  must(R.anyPass([ util.isFunction, R.is(Object) ]), 'condition must be an object or function'))
+const match = preconditions(PRECONDITIONS.isMatcherCondition)
   (condition => Matcher(condition))
 module.exports = match
 
@@ -53,4 +58,48 @@ match.first = preconditions
         R.always(state)
       )
     )(reducers)
+  ))
+
+// Creates a helper predicate that returns true iff the predicates in the object's leaves
+// return true.
+match.shape = R.when(util.isPlainObject, R.where)
+
+// Creates a helper predicate that deeply matches the supplied object against the argument.
+match.object = R.when(util.isPlainObject, R.whereEq)
+
+// Shorthand for creating a match condition that tests the action (second argument) only.
+// Automatically applies match.shape() to the arguments
+match.action = preconditions(PRECONDITIONS.isMatcherCondition)
+  (condition => console.log('match', condition) || R.pipe(R.nthArg(1), R.tap(console.log.bind(null, condition, util.isPlainObject(condition))), match.shape(condition)))
+
+// A Matcher that always calls the reducer.
+match.always = reducer => Matcher(R.T, reducer)
+
+const isFunctionOrMatcher = R.anyPass([ util.isFunction, R.is(Matcher) ])
+
+// Converts any non-Matchers to Matchers via match.always
+const convertToMatcher = preconditions
+  (must(isFunctionOrMatcher, 'must be a function or Matcher'))
+  (R.when(R.complement(R.is(Matcher)), match.always))
+
+// Given some reducers (some of which may be Matchers) returns a match.first Matcher.
+// Converts any plain reducers to match.always Matchers.
+const getMatcherFromReducers = preconditions
+  (must(R.unapply(R.all(isFunctionOrMatcher)), 'arguments must be functions or Matchers'))
+  (R.pipe(
+    R.unapply(R.map(convertToMatcher)),
+    R.apply(match.first)
+  ))
+
+// Shorthand for creating a Matcher whose tests the action (second argument) only for use with redux.
+// * Automatically applies the shape helper to objects.
+// * Automatically applies match.first to the reducers
+match.redux = preconditions(PRECONDITIONS.isMatcherCondition)
+  (R.pipe(
+    match.action,
+    match,
+    matcher => R.pipe(
+      R.partial(R.call, [ R.bind ]),
+      R.assoc('with', R.pipe(getMatcherFromReducers, matcher.with))
+    )(matcher)
   ))
