@@ -70,7 +70,7 @@ match.object = R.when(util.isPlainObject, R.whereEq)
 // Shorthand for creating a match condition that tests the action (second argument) only.
 // Automatically applies match.shape() to the arguments
 match.action = preconditions(PRECONDITIONS.isMatcherCondition)
-  (condition => console.log('match', condition) || R.pipe(R.nthArg(1), R.tap(console.log.bind(null, condition, util.isPlainObject(condition))), match.shape(condition)))
+  (condition => R.pipe(R.nthArg(1), match.shape(condition)))
 
 // A Matcher that always calls the reducer.
 match.always = reducer => Matcher(R.T, reducer)
