@@ -19,6 +19,17 @@ const Matcher = util.functionWithType(function (condition, reducer = R.identity)
   return reduce
 }, 'Matcher')
 
+// Given a Matcher, returns a new Matcher with the same condition and reducer
+const ofMatcher = preconditions
+  (must(R.is(Matcher), 'argument must be a Matcher'))
+  (R.pipe(
+    util.getFrom(privates),
+    R.converge(Matcher, [
+      R.prop('condition'),
+      R.prop('reducer')
+    ])
+  ))
+
 const PRECONDITIONS = {
   isMatcherCondition: must(
     R.anyPass([ util.isFunction, R.is(Object) ]),
@@ -94,7 +105,7 @@ match.redux = preconditions
     match.action,
     match,
     matcher => R.pipe(
-      R.partial(R.call, [ R.bind ]),
-      R.assoc('with', R.pipe(getMatcherFromReducers, matcher.with))
+      ofMatcher,
+      util.defineProperty('with', R.pipe(getMatcherFromReducers, matcher.with))
     )(matcher)
   ))

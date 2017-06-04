@@ -21,6 +21,10 @@ module.exports.setLength = setLength
 const callWith = (...args) => f => f(...args)
 module.exports.callWith = callWith
 
+// Like (f => f.bind(null)), but doesn't rebind the "this" value
+const callerOf = f => setLength(f.length, (...args) => f(...args))
+module.exports.callerOf = callerOf
+
 // Returns a function P with the following properties:
 //    let f = P(x => x /* can be any function */)
 //    typeof f === 'function'
@@ -95,7 +99,7 @@ const isPlainObject = R.allPass([
 module.exports.isPlainObject = isPlainObject
 
 // Log the arguments and return value of a function.
-const inspectFunction = f => util.setLength(f.length, (...args) => {
+const inspectFunction = f => setLength(f.length, (...args) => {
   console.log('arguments', args)
   const result = f(...args)
   console.log('result', result)

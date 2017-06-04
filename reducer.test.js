@@ -92,6 +92,25 @@ describe('redux', () => {
   const state = Symbol.for('state')
   const action = Symbol.for('action')
 
+  it(`can be used a reducer before with() is called`, () => {
+    const condition = jest.fn(R.T)
+    const matcher = match.redux(condition)
+
+    expect(matcher(state, action)).toBe(state)
+    expect(condition).toBeCalledWith(action)
+  })
+
+  it(`applies match.action to Object conditions`, () => {
+    const action = { foo: 'bar' }
+    const fooPropCondition = jest.fn(R.equals(action.foo))
+
+    const conditionObject = { foo: fooPropCondition }
+    const matcher = match.redux(conditionObject).with(R.add(3))
+
+    expect(matcher(5, action)).toBe(8)
+    expect(fooPropCondition).toBeCalledWith(action.foo)
+  })
+
   it(`uses the original condition`, () => {
     const trueReducer = jest.fn(match(R.T))
     const trueCondition = jest.fn(R.T)
