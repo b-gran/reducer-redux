@@ -77,9 +77,60 @@ describe('first', () => {
 })
 
 describe('action', () => {
-  it(`throws if the argument's isn't a MatcherConditions`, () => {
+  it(`throws if the argument isn't a MatcherConditions`, () => {
     expect(() => match.action('string')).toThrow()
     expect(() => match.action(null)).toThrow()
+  })
+
+  it(`passes the condition the second argument`, () => {
+    const second = Symbol.for('second')
+    const condition = jest.fn(R.T)
+    const actionCondition = match.action(condition)
+
+    actionCondition('first', second)
+    expect(condition).toBeCalledWith(second)
+  })
+
+  it(`converts objects to R.where`, () => {
+    const action = { foo: 'bar' }
+    const fooPropCondition = jest.fn(R.equals(action.foo))
+
+    const conditionObject = { foo: fooPropCondition }
+    const actionCondition = match.action(conditionObject)
+
+    expect(actionCondition(null, action)).toBeTruthy()
+    expect(fooPropCondition).toBeCalledWith(action.foo)
+  })
+})
+
+describe('always', () => {
+  it(`throws if the first argument is a non-Function`, () => {
+    expect(() => match.always(undefined)).toThrow()
+    expect(() => match.always({})).toThrow()
+  })
+
+  const state = Symbol.for('state')
+  const action = Symbol.for('action')
+  const result = Symbol.for('result')
+
+  const reducer = jest.fn(R.always(result))
+  const matcher = match.always(reducer)
+
+  it(`calls the reducer with the state and action`, () => {
+    reducer.mockClear()
+    expect(matcher(state, action)).toBe(result)
+    expect(reducer).toBeCalledWith(state, action)
+  })
+
+  it(`returns a Matcher with a new reducer when with() is called`, () => {
+    reducer.mockClear()
+    const newResult = Symbol.for('newResult')
+    const newReducer = jest.fn(R.always(newResult))
+    const newMatcher = matcher.with(newReducer)
+
+    expect(newMatcher(state, action)).toBe(newResult)
+    expect(newReducer).toBeCalledWith(state, action)
+    expect(reducer).not.toBeCalled()
   })
 })
 

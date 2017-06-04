@@ -30,10 +30,16 @@ const ofMatcher = preconditions
     ])
   ))
 
+const isFunctionOrMatcher = R.anyPass([ util.isFunction, R.is(Matcher) ])
+
 const PRECONDITIONS = {
   isMatcherCondition: must(
     R.anyPass([ util.isFunction, R.is(Object) ]),
     'condition must be an object or function'
+  ),
+  isFunctionOrMatcher: must(
+    isFunctionOrMatcher,
+    'must be a function or Matcher'
   )
 }
 
@@ -78,13 +84,13 @@ match.action = preconditions
   (condition => R.pipe(R.nthArg(1), match.shape(condition)))
 
 // A Matcher that always calls the reducer.
-match.always = reducer => Matcher(R.T, reducer)
-
-const isFunctionOrMatcher = R.anyPass([ util.isFunction, R.is(Matcher) ])
+match.always = preconditions
+  (PRECONDITIONS.isFunctionOrMatcher)
+  (reducer => Matcher(R.T, reducer))
 
 // Converts any non-Matchers to Matchers via match.always
 const convertToMatcher = preconditions
-  (must(isFunctionOrMatcher, 'must be a function or Matcher'))
+  (PRECONDITIONS.isFunctionOrMatcher)
   (R.when(R.complement(R.is(Matcher)), match.always))
 
 // Given some reducers (some of which may be Matchers) returns a match.first Matcher.
@@ -96,8 +102,9 @@ const getMatcherFromReducers = preconditions
     R.apply(match.first)
   ))
 
-// Shorthand for creating a Matcher whose tests the action (second argument) only for use with redux.
-// * Automatically applies the shape helper to objects.
+// Shorthand for creating a Matcher whose condition tests only the action (second argument), and whose
+// reducer can be a combination of multiple reducers. For use with redux.
+// * Automatically applies the match.action helper to the condition
 // * Automatically applies match.first to the reducers
 match.redux = preconditions
   (PRECONDITIONS.isMatcherCondition)
