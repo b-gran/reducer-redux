@@ -1,12 +1,4 @@
 /*
- * Condition :: (any -> boolean) | Object<Condition>
- *
- * State a :: a
- * Action :: Object<any>
- * Reducer a :: State a -> Action -> State a
- *
- * match a :: Condition -> match a
- * match.with :: match a ~> Reducer a -> match a
  */
 
 const R = require('ramda')
@@ -35,7 +27,8 @@ const PRECONDITIONS = {
 }
 
 // The library export: wraps Matcher to only accept a condition
-const match = preconditions(PRECONDITIONS.isMatcherCondition)
+const match = preconditions
+  (must(util.isFunction, 'argument must be a function'))
   (condition => Matcher(condition))
 module.exports = match
 
@@ -69,7 +62,8 @@ match.object = R.when(util.isPlainObject, R.whereEq)
 
 // Shorthand for creating a match condition that tests the action (second argument) only.
 // Automatically applies match.shape() to the arguments
-match.action = preconditions(PRECONDITIONS.isMatcherCondition)
+match.action = preconditions
+  (PRECONDITIONS.isMatcherCondition)
   (condition => R.pipe(R.nthArg(1), match.shape(condition)))
 
 // A Matcher that always calls the reducer.
@@ -94,7 +88,8 @@ const getMatcherFromReducers = preconditions
 // Shorthand for creating a Matcher whose tests the action (second argument) only for use with redux.
 // * Automatically applies the shape helper to objects.
 // * Automatically applies match.first to the reducers
-match.redux = preconditions(PRECONDITIONS.isMatcherCondition)
+match.redux = preconditions
+  (PRECONDITIONS.isMatcherCondition)
   (R.pipe(
     match.action,
     match,
