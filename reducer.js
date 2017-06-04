@@ -53,7 +53,7 @@ module.exports = match
 // condition is true.
 match.first = preconditions
   (
-    must(R.pipe(R.length, R.gt(R.__, 0)), 'must pass at least one Matcher'),
+    must(R.pipe(R.length, R.gt(R.__, 0)), 'must pass at least one argument'),
     must(R.unapply(R.all(R.is(Matcher))), 'arguments must be Matchers')
   )
   ((...reducers) => Matcher(
@@ -113,6 +113,8 @@ match.redux = preconditions
     match,
     matcher => R.pipe(
       ofMatcher,
+
+      // TODO: have Matcher support other with() implementations
       util.defineProperty('with', R.pipe(getMatcherFromReducers, matcher.with))
     )(matcher)
   ))

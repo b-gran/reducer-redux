@@ -71,16 +71,18 @@ module.exports.preconditions = preconditions
 const must = R.nAry(2, arrayOf)
 module.exports.must = must
 
-// Predicate that returns if the argument can be used as a key for a plain object
+// Predicate that is true if the argument can be used as a key for a plain object
 const isKeyType = R.anyPass([
   isType('string'), isType('number'), isType('symbol'), isType('boolean'), isType('number')
 ])
 
 // Binds a property of an object to the object (e.g. bindMethod('log')(console)('hello, world') )
-const bindMethod = preconditions(
-  must(R.pipe(R.nthArg(0), isKeyType), 'method must be a valid object key'),
-  must(R.pipe(R.prop, R.is(Function)), 'the property must be a function'))
-(R.curryN(2, (method, object) => object[method].bind(object)))
+const bindMethod = preconditions
+  (
+    must(R.pipe(R.nthArg(0), isKeyType), 'method must be a valid object key'),
+    must(R.pipe(R.prop, R.is(Function)), 'the property must be a function')
+  )
+  (R.curryN(2, (method, object) => object[method].bind(object)))
 module.exports.bindMethod = bindMethod
 
 // Given a Map (or Map-like), gets the value in the map whose key is the second argument
