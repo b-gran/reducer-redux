@@ -103,7 +103,7 @@ createBundle(packageJson.main, path.join('dist', packageJson.main))
     isDryRun && log.warn('Dry run: skipped publish...')
     R.ifElse(Boolean)
       (R.unary(log.info).bind(null, 'Finished dry run.'))
-      (must(execSync.bind(null, 'npm publish', { cwd: 'dist' })))
+      (must(() => execSync('npm publish', { cwd: path.resolve('dist') })))
       (isDryRun)
   })
 
