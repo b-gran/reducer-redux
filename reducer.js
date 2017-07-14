@@ -77,11 +77,19 @@ match.shape = R.when(util.isPlainObject, R.where)
 // Creates a helper predicate that deeply matches the supplied object against the argument.
 match.object = R.when(util.isPlainObject, R.whereEq)
 
-// Shorthand for creating a match condition that tests the action (second argument) only.
-// Automatically applies match.shape() to the arguments
-match.action = preconditions
+// Given a transform that returns a unary predicate from a condition, returns a shorthand function
+// for creating conditions that test the second argument using the predicate from the condition.
+const getActionCondition = getConditionPredicate => preconditions
   (PRECONDITIONS.isMatcherCondition)
-  (condition => R.pipe(R.nthArg(1), match.shape(condition)))
+  (condition => R.pipe(R.nthArg(1), getConditionPredicate(condition)))
+
+// Shorthand for creating a match condition that tests the action (second argument) only and
+// automatically applies match.shape() to the arguments
+match.action = getActionCondition(match.shape)
+
+// Shorthand for creating a match condition that tests the action (second argument) only and
+// automatically applies match.object() to the arguments
+match.plainAction = getActionCondition(match.object)
 
 // A Matcher that always calls the reducer.
 match.always = preconditions
