@@ -121,7 +121,7 @@ function createBundle (target, destination) {
       }),
     ]
   }).then(bundle => {
-    bundle.write({
+    return bundle.write({
       format: 'cjs',
       dest: destination,
     })
