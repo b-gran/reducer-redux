@@ -5,8 +5,13 @@
 const R = require('ramda')
 const chalk = require('chalk')
 const fs = require('fs')
+const path = require('path')
 const execSync = require('child_process').execSync
 const noop = () => {}
+
+const rollup = require('rollup')
+const commonjs = require('rollup-plugin-commonjs')
+const nodeResolve = require('rollup-plugin-node-resolve')
 
 // Prints a message to the console with a timestamp prefixed.
 const formatTime = R.pipe(
@@ -55,7 +60,7 @@ function remove (path) {
   ))
 
   // Just remove non-directory files directly
-  (R.unary(fs.unlink))
+  (R.unary(fs.unlinkSync))
   (path)
 }
 
@@ -76,6 +81,7 @@ const isDryRun = R.any(R.anyPass([ R.equals('-n'), R.equals('--dry-run') ]), Arr
 const omitDevelopmentKeys = R.omit([ 'devDependencies', 'scripts' ])
 
 log.info(`Publishing ${chalk.black(`${packageJson.name}@${packageJson.version}`)} to npm...`)
+isDryRun && log.warn('Dry run (will not contact npm)')
 
 log(`Creating ${chalk.black('dist/')} directory...`)
 all(
@@ -83,17 +89,41 @@ all(
   must(R.unary(fs.mkdirSync).bind(fs, 'dist'))
 )
 
-log(`Preparing ${chalk.black('package.json')}...`)
-R.pipe(
-  omitDevelopmentKeys,
-  R.curryN(3, JSON.stringify)(R.__, null, '  '),
-  must(write('dist/package.json'))
-)(packageJson)
+log(`Writing bundle for ${chalk.black(packageJson.main)}...`)
+createBundle(packageJson.main, path.join('dist', packageJson.main))
+  .then(() => {
+    log(`Preparing ${chalk.black('package.json')}...`)
+    R.pipe(
+      omitDevelopmentKeys,
+      R.curryN(3, JSON.stringify)(R.__, null, '  '),
+      must(write('dist/package.json'))
+    )(packageJson)
 
+    log(`Publishing to npm...`)
+    isDryRun && log.warn('Dry run: skipped publish...')
+    R.ifElse(Boolean)
+      (R.unary(log.info).bind(null, 'Finished dry run.'))
+      (must(execSync.bind(null, 'npm publish', { cwd: 'dist' })))
+      (isDryRun)
+  })
 
-log(`Publishing to npm...`)
-isDryRun && log.warn('Dry run (will not contact npm)')
-R.ifElse(Boolean)
-  (R.unary(log.info).bind(null, 'Finished dry run.'))
-  (must(execSync.bind(null, 'npm publish', { cwd: 'dist' })))
-  (isDryRun)
+  .catch(err => die(`Failed to write bundle: ${err.message}`))
+
+function createBundle (target, destination) {
+  return rollup.rollup({
+    entry: target,
+    plugins: [
+      nodeResolve({
+        jsnext: true,
+      }),
+      commonjs({
+        sourcemap: false,
+      }),
+    ]
+  }).then(bundle => {
+    bundle.write({
+      format: 'cjs',
+      dest: destination,
+    })
+  })
+}
