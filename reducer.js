@@ -1,6 +1,3 @@
-/*
- */
-
 const R = require('ramda')
 
 const util = require('./util')

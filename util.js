@@ -55,16 +55,17 @@ const failureMessage = R.either(R.last, R.always('failed precondition'))
 // Passes function arguments through a list of predicates specified as tuples of
 // (predicate, failure-message). Calls the function if all the conditions pass.
 // Throws if any condition fails.
-const preconditions = (...conditions) => f => setLength(f.length)
-((...args) => {
-  const failedCondition = R.find(
-    R.complement(R.pipe(R.head, callWith(...args))), conditions)
+const preconditions = (...conditions) => f => setLength(f.length)(
+  (...args) => {
+    const failedCondition = R.find(
+      R.complement(R.pipe(R.head, callWith(...args))), conditions)
 
-  if (failedCondition) {
-    throw new Error(failureMessage(failedCondition))
+    if (failedCondition) {
+      throw new Error(failureMessage(failedCondition))
+    }
+    return f(...args)
   }
-  return f(...args)
-})
+)
 module.exports.preconditions = preconditions
 
 // Shorthand for wrapping a predicate and message as a 2-tuple for use as arguments to preconditions
@@ -77,12 +78,12 @@ const isKeyType = R.anyPass([
 ])
 
 // Binds a property of an object to the object (e.g. bindMethod('log')(console)('hello, world') )
-const bindMethod = preconditions
-  (
-    must(R.pipe(R.nthArg(0), isKeyType), 'method must be a valid object key'),
-    must(R.pipe(R.prop, R.is(Function)), 'the property must be a function')
-  )
-  (R.curryN(2, (method, object) => object[method].bind(object)))
+const bindMethod = preconditions(
+  must(R.pipe(R.nthArg(0), isKeyType), 'method must be a valid object key'),
+  must(R.pipe(R.prop, R.is(Function)), 'the property must be a function')
+)(
+  R.curryN(2, (method, object) => object[method].bind(object))
+)
 module.exports.bindMethod = bindMethod
 
 // Given a Map (or Map-like), gets the value in the map whose key is the second argument
