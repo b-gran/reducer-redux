@@ -13,10 +13,17 @@ const rollup = require('rollup')
 const commonjs = require('rollup-plugin-commonjs')
 const nodeResolve = require('rollup-plugin-node-resolve')
 
+const ensureTwoDigit = R.pipe(
+  Math.trunc,
+  R.when(R.lt(R.__, 10), R.concat('0')),
+  String
+)
+
 // Prints a message to the console with a timestamp prefixed.
 const formatTime = R.pipe(
   R.constructN(0, Date),
   R.juxt([ R.invoker(0, 'getHours'), R.invoker(0, 'getMinutes'), R.invoker(0, 'getSeconds' )]),
+  R.map(ensureTwoDigit),
   R.invoker(1, 'join')(':')
 )
 const log = (...messages) => console.log.call(console, chalk.blue(`[${formatTime()}]`), ...messages)
