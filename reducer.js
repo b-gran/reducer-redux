@@ -55,13 +55,13 @@ match.first = preconditions
   )
   ((...reducers) => Matcher(
     R.T,
-    (state, action) => R.pipe(
+    (state, ...rest) => R.pipe(
       R.find(
-        R.pipe(util.getFrom(privates), R.prop('condition'), util.callWith(state, action))
+        R.pipe(util.getFrom(privates), R.prop('condition'), util.callWith(state, ...rest))
       ),
       R.ifElse(
         R.identity,
-        util.callWith(state, action),
+        util.callWith(state, ...rest),
         R.always(state)
       )
     )(reducers)

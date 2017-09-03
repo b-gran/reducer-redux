@@ -37,6 +37,17 @@ describe('match', () => {
     expect(condition).toBeCalledWith(obj, undefined)
     expect(reducer).not.toBeCalled()
   })
+
+  it('supports conditions and reducers with > 2 arguments', () => {
+    const values = [ 'a', 'b', 'c', 'd' ]
+    const reducer = jest.fn(R.unapply(R.identity))
+    const condition = jest.fn(R.T)
+    const result = match(condition).with(reducer)
+
+    expect(result(...values)).toEqual(values)
+    expect(reducer).toBeCalledWith(...values)
+    expect(condition).toBeCalledWith(...values)
+  })
 })
 
 describe('first', () => {
@@ -73,6 +84,19 @@ describe('first', () => {
     expect(matcher(state, false)).toBe(state)
     expect(firstReducer).not.toBeCalled()
     expect(secondReducer).not.toBeCalled()
+  })
+
+  it('supports conditions and reducers with > 2 arguments', () => {
+    const values = [ 'a', 'b', 'c', 'd' ]
+    const reducer = jest.fn(R.unapply(R.identity))
+    const condition = jest.fn(R.T)
+    const innerMatcher = match(condition).with(reducer)
+
+    const firstMacher = match.first(innerMatcher)
+
+    expect(firstMacher(...values)).toEqual(values)
+    expect(reducer).toBeCalledWith(...values)
+    expect(condition).toBeCalledWith(...values)
   })
 })
 
