@@ -16,18 +16,21 @@ const rollup = require('rollup')
 const commonjs = require('rollup-plugin-commonjs')
 const nodeResolve = require('rollup-plugin-node-resolve')
 
+// Root of the entire repository.
 const PATH_REPO_ROOT = path.join(__dirname, '..')
-const PATH_DIST = path.join(PATH_REPO_ROOT, 'dist')
 
 // Shorthand for paths within the dist directory, where dist() === PATH_DIST
+const PATH_DIST = path.join(PATH_REPO_ROOT, 'dist')
 const dist = R.partial(path.join, [ PATH_DIST ])
 
-// ================================= CONFIG
+// CONFIG ===============================================
+// These options can be changed without modifying the
+// basic publishing process.
 
 // Source file that the bundle is generated from.
 const ENTRY_POINT = path.join(PATH_REPO_ROOT, 'src', 'reducer.js')
 
-// ========================================
+// END CONFIG ===========================================
 
 const ensureTwoDigit = R.pipe(
   Math.trunc,
@@ -42,13 +45,14 @@ const formatTime = R.pipe(
   R.map(ensureTwoDigit),
   R.invoker(1, 'join')(':')
 )
-const log = (...messages) => console.log.call(console, chalk.blue(`[${formatTime()}]`), ...messages)
-const logColor = R.converge(R.pipe)([
-  R.unary(R.pipe(R.map, R.unapply)),
-  R.always(R.apply(log))])
-log.info = logColor(chalk.green)
-log.warn = logColor(chalk.yellow)
-log.error = logColor(chalk.red)
+const log = (...messages) => console.log(chalk.blue(`[${formatTime()}]`), ...messages)
+const logWithColor = color => R.pipe(
+  R.unapply(R.map(color)),
+  R.apply(log)
+)
+log.info = logWithColor(chalk.green)
+log.warn = logWithColor(chalk.yellow)
+log.error = logWithColor(chalk.red)
 
 // Run a series of functions. Just like a pipe() called with 0 arguments.
 const all = R.pipe(
@@ -58,32 +62,23 @@ const all = R.pipe(
 
 // Synchronously remove a directory and all children.
 const isDirectory = R.pipe(R.unary(fs.lstatSync), R.invoker(0, 'isDirectory'))
-function remove (path) {
+function remove (filePath) {
   return R.ifElse(isDirectory)
-  (R.converge(
-    R.call,
-    [
-      R.converge(R.pipe, [
-        R.always(R.unary(fs.readdirSync)),
-        R.pipe(
-          // A function that appends a filename to the directory path
-          R.flip(R.concat)('/'), R.concat,
+  (filePath => {
+    // Remove (recursively) each file in the directory
+    fs.readdirSync(filePath).forEach(R.pipe(
+      R.unary(R.partial(path.join, [ filePath ])),
+      path.resolve,
+      remove
+    ))
 
-          // Pass the "append filename" function to an iterator that removes each file in the directory
-          R.converge(R.pipe, [ R.identity, R.always(remove) ]), R.forEach
-        ),
-
-        // rmdir the arguments to the outer function (the directory path)
-        R.pipe(fs.rmdirSync.bind.bind(fs.rmdirSync, null), R.unary)
-      ]),
-
-      R.identity
-    ]
-  ))
+    // Delete the directory
+    fs.rmdirSync(filePath)
+  })
 
   // Just remove non-directory files directly
   (R.unary(fs.unlinkSync))
-  (path)
+  (filePath)
 }
 
 // Log an error message and exit with an error code.
@@ -107,8 +102,8 @@ isDryRun && log.warn('Dry run (will not contact npm)')
 
 log(`Creating ${chalk.black('dist/')} directory...`)
 all(
-  attempt(remove.bind(null, dist())),
-  must(R.unary(fs.mkdirSync).bind(fs, dist()))
+  attempt(() => remove(dist())),
+  must(() => fs.mkdirSync(dist()))
 )
 
 log(`Writing bundle for ${chalk.black(packageJson.main)}...`)
@@ -124,11 +119,10 @@ createBundle(ENTRY_POINT, dist(packageJson.main))
     log(`Publishing to npm...`)
     isDryRun && log.warn('Dry run: skipped publish...')
     R.ifElse(Boolean)
-      (R.unary(log.info).bind(null, 'Finished dry run.'))
-      (must(() => execSync(
-        'npm publish',
-        { cwd: dist() }
-      )))
+      (() => log.info('Finished dry run.'))
+      (must(
+        () => execSync('npm publish', { cwd: dist() })
+      ))
       (isDryRun)
   })
 
