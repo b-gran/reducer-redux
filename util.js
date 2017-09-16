@@ -101,6 +101,9 @@ const isPlainObject = R.allPass([
 ])
 module.exports.isPlainObject = isPlainObject
 
+const isUndefined = R.equals(undefined)
+module.exports.isUndefined = isUndefined
+
 // Log the arguments and return value of a function.
 const inspectFunction = f => setLength(f.length, (...args) => {
   console.log('arguments', args)

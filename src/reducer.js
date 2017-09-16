@@ -67,6 +67,18 @@ match.first = preconditions
     )(reducers)
   ))
 
+// A Matcher that always calls the reducer.
+match.always = preconditions
+  (PRECONDITIONS.isFunctionOrMatcher)
+  (reducer => Matcher(R.T, reducer))
+
+// Wraps around a Matcher and returns a default value if the state (first argument) is undefined.
+match.withDefault = defaultValue => matcher => R.ifElse(
+  state => util.isUndefined(state),
+  () => defaultValue,
+  matcher
+)
+
 // Creates a helper predicate that returns true iff the predicates in the object's leaves
 // return true.
 match.shape = R.when(util.isPlainObject, R.where)
@@ -87,11 +99,6 @@ match.action = getActionCondition(match.shape)
 // Shorthand for creating a match condition that tests the action (second argument) only and
 // automatically applies match.object() to the arguments
 match.plainAction = getActionCondition(match.object)
-
-// A Matcher that always calls the reducer.
-match.always = preconditions
-  (PRECONDITIONS.isFunctionOrMatcher)
-  (reducer => Matcher(R.T, reducer))
 
 // Converts any non-Matchers to Matchers via match.always
 const convertToMatcher = preconditions

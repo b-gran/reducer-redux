@@ -100,6 +100,36 @@ describe('first', () => {
   })
 })
 
+describe('withDefault', () => {
+  it(`returns the default value if the state is undefined`, () => {
+    const defaultValue = Symbol.for('value')
+
+    const trueCondition = jest.fn(R.T)
+    const trueReducer = jest.fn(R.identity)
+    const trueMatcher = match(trueCondition).with(trueReducer)
+
+    const defaultMatcher = match.withDefault(defaultValue)(trueMatcher)
+
+    expect(defaultMatcher(undefined)).toBe(defaultValue)
+    expect(trueCondition).not.toBeCalled()
+    expect(trueReducer).not.toBeCalled()
+  })
+
+  it(`uses the reducer if the state is defined`, () => {
+    const value = Symbol.for('other')
+
+    const trueCondition = jest.fn(R.T)
+    const trueReducer = jest.fn(R.identity)
+    const trueMatcher = match(trueCondition).with(trueReducer)
+
+    const defaultMatcher = match.withDefault('any')(trueMatcher)
+
+    expect(defaultMatcher(value)).toBe(value)
+    expect(trueCondition).toBeCalledWith(value)
+    expect(trueReducer).toBeCalledWith(value)
+  })
+})
+
 describe('action', () => {
   it(`throws if the argument isn't a MatcherConditions`, () => {
     expect(() => match.action('string')).toThrow()
