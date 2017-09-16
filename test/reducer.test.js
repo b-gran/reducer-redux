@@ -1,4 +1,4 @@
-const match = require('./reducer')
+const match = require('../src/reducer')
 const R = require('ramda')
 
 describe('match', () => {

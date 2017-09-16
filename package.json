@@ -2,10 +2,10 @@
   "name": "reducer-redux",
   "version": "1.1.0",
   "description": "Composable, functional redux reducers",
-  "main": "reducer.js",
+  "main": "index.js",
   "scripts": {
     "test": "jest",
-    "publish": "node publish.js"
+    "publish": "node tools/publish.js"
   },
   "dependencies": {
     "ramda": "^0.23.0"

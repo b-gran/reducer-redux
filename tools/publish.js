@@ -1,5 +1,8 @@
 /*
  * Publish the package to npm.
+ *
+ * Usage:
+ *    node publish.js [-n | --dry-run]
  */
 
 const R = require('ramda')
@@ -12,6 +15,19 @@ const noop = () => {}
 const rollup = require('rollup')
 const commonjs = require('rollup-plugin-commonjs')
 const nodeResolve = require('rollup-plugin-node-resolve')
+
+const PATH_REPO_ROOT = path.join(__dirname, '..')
+const PATH_DIST = path.join(PATH_REPO_ROOT, 'dist')
+
+// Shorthand for paths within the dist directory, where dist() === PATH_DIST
+const dist = R.partial(path.join, [ PATH_DIST ])
+
+// ================================= CONFIG
+
+// Source file that the bundle is generated from.
+const ENTRY_POINT = path.join(PATH_REPO_ROOT, 'src', 'reducer.js')
+
+// ========================================
 
 const ensureTwoDigit = R.pipe(
   Math.trunc,
@@ -41,7 +57,6 @@ const all = R.pipe(
 )
 
 // Synchronously remove a directory and all children.
-// This function has a much simpler imperative implementation
 const isDirectory = R.pipe(R.unary(fs.lstatSync), R.invoker(0, 'isDirectory'))
 function remove (path) {
   return R.ifElse(isDirectory)
@@ -83,7 +98,7 @@ const attempt = R.tryCatch(R.__, noop)
 // Synchronously write a file to disk with utf-8 encoding.
 const write = R.curryN(3, fs.writeFileSync)(R.__, R.__, 'utf-8')
 
-const packageJson = require('./package.json')
+const packageJson = require(path.join(PATH_REPO_ROOT, 'package.json'))
 const isDryRun = R.any(R.anyPass([ R.equals('-n'), R.equals('--dry-run') ]), Array.from(process.argv))
 const omitDevelopmentKeys = R.omit([ 'devDependencies', 'scripts' ])
 
@@ -92,25 +107,28 @@ isDryRun && log.warn('Dry run (will not contact npm)')
 
 log(`Creating ${chalk.black('dist/')} directory...`)
 all(
-  attempt(remove.bind(null, 'dist')),
-  must(R.unary(fs.mkdirSync).bind(fs, 'dist'))
+  attempt(remove.bind(null, dist())),
+  must(R.unary(fs.mkdirSync).bind(fs, dist()))
 )
 
 log(`Writing bundle for ${chalk.black(packageJson.main)}...`)
-createBundle(packageJson.main, path.join('dist', packageJson.main))
+createBundle(ENTRY_POINT, dist(packageJson.main))
   .then(() => {
     log(`Preparing ${chalk.black('package.json')}...`)
     R.pipe(
       omitDevelopmentKeys,
       R.curryN(3, JSON.stringify)(R.__, null, '  '),
-      must(write('dist/package.json'))
+      must(write(dist('package.json')))
     )(packageJson)
 
     log(`Publishing to npm...`)
     isDryRun && log.warn('Dry run: skipped publish...')
     R.ifElse(Boolean)
       (R.unary(log.info).bind(null, 'Finished dry run.'))
-      (must(() => execSync('npm publish', { cwd: path.resolve('dist') })))
+      (must(() => execSync(
+        'npm publish',
+        { cwd: dist() }
+      )))
       (isDryRun)
   })
 
