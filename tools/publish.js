@@ -93,6 +93,12 @@ const attempt = R.tryCatch(R.__, noop)
 // Synchronously write a file to disk with utf-8 encoding.
 const write = R.curryN(3, fs.writeFileSync)(R.__, R.__, 'utf-8')
 
+// Synchronously copy a file from one location to another.
+const copy = R.curry((filePath, destinationPath) => {
+  const contents = fs.readFileSync(filePath)
+  return fs.writeFileSync(destinationPath, contents)
+})
+
 const packageJson = require(path.join(PATH_REPO_ROOT, 'package.json'))
 const isDryRun = R.any(R.anyPass([ R.equals('-n'), R.equals('--dry-run') ]), Array.from(process.argv))
 const omitDevelopmentKeys = R.omit([ 'devDependencies', 'scripts' ])
@@ -115,6 +121,9 @@ createBundle(ENTRY_POINT, dist(packageJson.main))
       R.curryN(3, JSON.stringify)(R.__, null, '  '),
       must(write(dist('package.json')))
     )(packageJson)
+
+    log(`Copying README.md...`)
+    must(copy)(path.join(PATH_REPO_ROOT, 'README.md'), dist('README.md'))
 
     log(`Publishing to npm...`)
     isDryRun && log.warn('Dry run: skipped publish...')
