@@ -130,16 +130,16 @@ describe('withDefault', () => {
   })
 })
 
-describe('action', () => {
+describe('actionCondition', () => {
   it(`throws if the argument isn't a MatcherConditions`, () => {
-    expect(() => match.action('string')).toThrow()
-    expect(() => match.action(null)).toThrow()
+    expect(() => match.actionCondition('string')).toThrow()
+    expect(() => match.actionCondition(null)).toThrow()
   })
 
   it(`passes the condition the second argument`, () => {
     const second = Symbol.for('second')
     const condition = jest.fn(R.T)
-    const actionCondition = match.action(condition)
+    const actionCondition = match.actionCondition(condition)
 
     actionCondition('first', second)
     expect(condition).toBeCalledWith(second)
@@ -150,10 +150,51 @@ describe('action', () => {
     const fooPropCondition = jest.fn(R.equals(action.foo))
 
     const conditionObject = { foo: fooPropCondition }
-    const actionCondition = match.action(conditionObject)
+    const actionCondition = match.actionCondition(conditionObject)
 
     expect(actionCondition(null, action)).toBeTruthy()
     expect(fooPropCondition).toBeCalledWith(action.foo)
+  })
+})
+
+describe('plainAction', () => {
+  it('compares the second argument to a plain object', () => {
+    const reducer = jest.fn(R.identity)
+    const matcher = match.plainAction({
+      foo: 'bar',
+      bar: 'baz',
+    }).with(reducer)
+
+    const state = Symbol.for('state')
+    const incompleteAction = {
+      foo: 'bar',
+    }
+    const exactAction = {
+      foo: 'bar',
+      bar: 'baz',
+    }
+    const superAction = {
+      foo: 'bar',
+      bar: 'baz',
+      something: 'else',
+    }
+
+    expect(
+      matcher(state, incompleteAction)
+    ).toBe(state)
+    expect(reducer).not.toBeCalled()
+
+    reducer.mockClear()
+    expect(
+      matcher(state, exactAction)
+    ).toBe(state)
+    expect(reducer).toBeCalledWith(state, exactAction)
+
+    reducer.mockClear()
+    expect(
+      matcher(state, superAction)
+    ).toBe(state)
+    expect(reducer).toBeCalledWith(state, superAction)
   })
 })
 
@@ -275,7 +316,7 @@ describe('redux', () => {
 // Some examples of the library used in different ways.
 describe('examples', () => {
   test('action helper', () => {
-    const actionShape = match(match.action({ foo: R.equals('bar') }))
+    const actionShape = match(match.actionCondition({ foo: R.equals('bar') }))
       .with(R.assoc('foo', 'baz'))
 
     expect(actionShape({ hello: 'world' }, { foo: 'bar' })).toEqual({ hello: 'world', foo: 'baz' })

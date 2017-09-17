@@ -94,11 +94,14 @@ const getActionCondition = getConditionPredicate => preconditions
 
 // Shorthand for creating a match condition that tests the action (second argument) only and
 // automatically applies match.shape() to the arguments
-match.action = getActionCondition(match.shape)
+match.actionCondition = getActionCondition(match.shape)
 
 // Shorthand for creating a match condition that tests the action (second argument) only and
 // automatically applies match.object() to the arguments
-match.plainAction = getActionCondition(match.object)
+match.plainActionCondition = getActionCondition(match.object)
+
+// Create a Matcher whose condition matches against a plain object action
+match.plainAction = R.pipe(match.plainActionCondition, match)
 
 // Converts any non-Matchers to Matchers via match.always
 const convertToMatcher = preconditions
@@ -121,7 +124,7 @@ const getMatcherFromReducers = preconditions
 match.redux = preconditions
   (PRECONDITIONS.isMatcherCondition)
   (R.pipe(
-    match.action,
+    match.actionCondition,
     match,
     matcher => R.pipe(
       ofMatcher,
