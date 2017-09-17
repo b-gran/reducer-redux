@@ -1,6 +1,6 @@
 const R = require('ramda')
 
-const util = require('../util')
+const util = require('./util')
 const { preconditions, must } = util
 
 // Private Matcher variables, accessible to other Matcher instances
