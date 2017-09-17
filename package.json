@@ -1,6 +1,6 @@
 {
   "name": "reducer-redux",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "Composable, functional redux reducers",
   "main": "index.js",
   "scripts": {
