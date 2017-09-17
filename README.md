@@ -1,10 +1,14 @@
 # `reducer-redux`
 
-A utility for easily creating robust redux reducers.
+[![Build Status](https://travis-ci.org/b-gran/reducer-redux.svg?branch=master)](https://travis-ci.org/b-gran/reducer-redux) [![npm version](https://badge.fury.io/js/reducer-redux.svg)](https://badge.fury.io/js/reducer-redux)
 
-`reducer-redux` applies different reducers based on the properties of an action.
+Create functional, reusable redux reducers. Liberate yourself from `switch`.
 
-Its main purpose is saving you from a bunch of nested `switch` statements.
+_`(g∘f)`_ __Composable__: reducers are just plain functions. Nest and compose them with other reducers and libraries.
+
+`♺` __Reusable__: designed for redux but flexible enough to use elsewhere. Create building blocks and reuse them.
+
+_`xⁿ`_ __Powerful__: comes with a utility belt for working with redux actions.
 
 ## Installation
 
@@ -12,210 +16,98 @@ Its main purpose is saving you from a bunch of nested `switch` statements.
 npm install reducer-redux
 ```
 
-## Usage
+## 30 second overview
 
-The main `reducer()` function accepts an initial state value as its argument. 
-If the state passed to a reducer is `undefined`, that initial state value
-will be returned.
-
-You add reducers using the `add()` function. The `add()` function accepts
-an object with reducer functions (of form `(state, action) => whatever`) as
-its leaves. If a matching action is passed to the reducer, that reducer 
-function will be called.
-
-If no reducer is found, the state will just be passed through unchanged.
-
-Here's an example. Let's say you set up your reducer like this
+An example from the redux tutorial:
 
 ```
-import reducer from 'reducer-redux';
-
-const myReducer = reducer([]);
-myReducer.add({
-    type: {
-        ADD: {
-            position: {
-                BEGINNING: (state, action) => [ action.value, ...state, ],
-                END: (state, action) => [ ...state, action.value ],
-            },
-        },
-        
-        REMOVE: {
-            position: {
-                BEGINNING: (state, action) => state.slice(
-                    Math.min(1, state.length),
-                    state.length
-                ),
-                
-                END: (state, action) => state.slice(
-                    0,
-                    Math.max(0, state.length - 1)
-                ),
-            },
-        },
-    },
-});
-```
-
-Here's what happens for various states and actions
-
-```
-myReducer(
-    [ 1 ], 
-    {
-        type: 'ADD',
-        position: 'BEGINNING',
-        value: 2,
-    }
-);
-// [ 2, 1 ]
-
-myReducer(
-    [ 1 ], 
-    {
-        type: 'ADD',
-        position: 'END',
-        value: 2,
-    }
-);
-// [ 1, 2 ]
-
-myReducer(
-    [ 1, 2 ], 
-    {
-        type: 'REMOVE',
-        position: 'END',
-    }
-);
-// [ 1 ]
-
-myReducer(
-    [ 1, 2 ], 
-    {
-        type: 'REMOVE',
-        position: 'BEGINNING',
-    }
-);
-// [ 2 ]
-
-// If no reducer is found, passes state through unchanged
-myReducer(
-    [ 1, 2 ], 
-    {
-        type: 'ADD',
-        position: 'MIDDLE',
-        value: 'whatever',
-    }
-);
-// [ 1, 2 ]
-        
-```
-
-You can structure these action/reducer objects however you'd like -- you
-aren't required to have `type` at the top level.
-
-Here's another way to write the above example:
-
-```
-myReducer.add({
-    position: {
-        BEGINNING: {
-            type: {
-                ADD: (state, action) => [ action.value, ...state, ],
-                REMOVE: (state, action) => state.slice(
-                    Math.min(1, state.length),
-                    state.length
-                ),
-            }
-        },
-    }
-});
-
-myReducer.add({
-    position: {
-        END: {
-            type: {
-                ADD: (state, action) => [ ...state, action.value ],
-                REMOVE: (state, action) => state.slice(
-                    0,
-                    Math.max(0, state.length - 1)
-                ),
-            }
-        },
-    }
-});
-```
-
-Based on an example from the [redux tutorial](http://redux.js.org/docs/basics/Reducers.html#source-code)
-
-```
-import reducer from 'reducer-redux';
+import match from 'reducer-redux';
 import { combineReducers } from 'redux';
 
 import { ADD_TODO, TOGGLE_TODO, SET_VISIBILITY_FILTER, VisibilityFilters } from './actions';
-const { SHOW_ALL } = VisibilityFilters;
 
-const visibilityFilter = reducer(SHOW_ALL);
-visibilityFilter.add({
-    type: {
-        SET_VISIBILITY_FILTER: (state, action) => action.filter,
-    },
-});
+const visibilityFilter = match.withDefault(VisibilityFilter.SHOW_ALL)(
+    match.plainAction({ type: SET_VISIBILITY_FILTER })
+        .with(action => action.filter)
+)
 
-const todos = reducer([]);
-todos.add({
-    type: {
-        ADD_TODO: (state, action) => [
-            ...state,
-            {
-                text: action.text,
-                completed: false,
-            },
-        ],
-        
-        TOGGLE_TODO: (state, action) => state.map(
-            (todo, index) => {
-                if (index === action.index) {
-                    return Object.assign({}, todo, {
-                        completed: !todo.completed
-                    });
+const todos = match.withDefault([])(
+    match.first(
+        match.plainAction({ type: ADD_TODO })
+            .with((action, state) => [
+                ...state,
+                { 
+                    text: action.text,
+                    completed: false,
                 }
-                
-                return todo;
-            }
-        ),
-    },
-});
+            ]),
+        match.plainAction({ type: TOGGLE_TODO })
+            .with((action, state) => state.map(
+                match((todo, index) => index === action.index)
+                    .with(todo => ({ ...todo, completed: !todo.completed }))
+            )),
+    ))
 
 export default combineReducers({
     visibilityFilter,
     todos
 });
-
 ```
 
-## Other utilities
+## Basic usage
 
-`reducer-redux` comes with two other utilities: `combineReducers()` and
-`compose()`.
+The library exports a function called `match`. `match` returns functions called _Matchers_, which
+ are the core abstraction of library. A Matcher is a tuple of `(condition, reducer)`. The condition
+is a predicate, and the reducer is any function. 
 
-`combineReducers()` is just like redux's vanilla combineReducers() function,
-except `reducer-redux`'s version passes a third argument to each reducer:
-the entire state object.
+Matchers created with `match` don't have a reducer yet. You specify a reducer by calling the
+Matcher's `.with()` function.
 
-`compose()` allows you to compose functions together.
+When the Matcher is called with some arguments, it first calls the `condition`.
+* __If the `condition` returns true__, the matcher returns the result of the `reducer` __with the 
+same arguments__.
+* __If the `condition` returns false, the matcher returns __the first argument__.
 
-For more information about these utilities, look in the `tests/` directory.
-
-## Contributing
-
+Here's an example:
 ```
-# Run all of the tests
-npm run test
+const matcher = match(value => value === 'foo')
+    .with(() => 'bar')
+matcher('foo') // 'bar'
+matcher('bar') // 'foo'
+matcher('bar', 'baz') // 'foo'
+```
 
-# Watch for changes to source files and rebuild
-gulp dev
+## Usage with redux
 
-# Build for release
-gulp production
+Although the library is powerful enough for use anywhere, it's designed for redux.
+
+__The `reducer` of a Matcher returns the first argument (the state) if the `condition` returns 
+false__.
+This property enables us to specify some conditions for which to modify a store state,
+and the Matcher will leave the state unchanged for any other condition!
+
+Here's an example:
+```
+const counter = match((state, action) => action.type === 'increment')
+    .with((state, action) => state + 1)
+counter(0, { type: 'increment' }) // 1    
+counter(0, { type: 'something else' }) // 0    
+counter(0, { type: 'another action' }) // 0    
+```
+
+Of course, a redux application needs to handle more than one action type.
+`reducer-redux` comes with a utility to combine reducers: `match.first()`.
+
+`match.first()` takes a group of reducers and uses the first one whose `condition` returns true.
+Here's an example:
+```
+const counter = match.first(
+    match((state, action) => action.type === 'increment')
+        .with((state, action) => state + action.amount),
+    match((state, action) => action.type === 'decrement')
+        .with((state, action) => state - action.amount)
+)
+counter(1, { type: 'increment', amount: 1 }) // 2    
+counter(1, { type: 'decrement', amount: 2 }) // -1    
+counter(1, { type: 'another action' }) // 1    
 ```
